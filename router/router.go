@@ -11,6 +11,7 @@ func SampleRouter(route *gin.Engine) {
 	sample := route.Group("/sample")
 	{
 		sample.GET("/GetAll", controller.GetAll)
-		sample.GET("/GetSample", controller.GetSample)
+		sample.GET("/GetSample/:SampleID", controller.GetSample)
+		sample.POST("/Create", controller.CreateSample)
 	}
 }
