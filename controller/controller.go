@@ -4,7 +4,6 @@ import (
 	"Jur/config"
 	"Jur/entities"
 	"Jur/utilities"
-	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -42,9 +41,31 @@ func GetAll(c *gin.Context) {
 }
 
 func GetSample(c *gin.Context) {
+	// Get Sample ID
 	SampleID := c.Param("SampleID")
-	result := fmt.Sprintf("Sample %s is Available !", SampleID)
-	c.JSON(200, gin.H{"result": result})
+
+	if SampleID == "" {
+		utilities.FailMess(c, 400, "Sample ID is Missing !")
+		return
+	}
+
+	database, errtable := config.GalaSetup()
+
+	if errtable != nil {
+		utilities.FailMess(c, 500, "Fail ! Connection Unavailable !", errtable.Error())
+		return
+	}
+
+	var sample entities.SampleTabler
+
+	if GetFail := database.First(&sample, SampleID).Error; GetFail != nil {
+		if GetFail.Error() == "record not found" {
+			utilities.FailMess(c, 404, "Sample Unavailable !")
+		}
+		return
+	}
+
+	c.JSON(200, sample)
 }
 
 func CreateSample(c *gin.Context) {
@@ -64,11 +85,7 @@ func CreateSample(c *gin.Context) {
 		return
 	}
 
-	// if create_err := database.Create(&sample).Error; create_err != nil {
-	// 	utilities.FailMess(c, 500, "Fail to Create Sample !")
-	// 	return
-	// }
-
+	// Create Batches Insert to Table
 	if create_err := database.CreateInBatches(samples, len(samples)).Error; create_err != nil {
 		utilities.FailMess(c, 500, "Fail to Create Multiple Sample !")
 	}
@@ -77,8 +94,25 @@ func CreateSample(c *gin.Context) {
 }
 
 func DeleteSample(c *gin.Context) {
+	// Delete Sample
 	SampleID := c.Param("SampleID")
-	// database.Delete(&, SampleID)
-	result := fmt.Sprintf("Sample %s is Deleted !", SampleID)
-	c.JSON(200, gin.H{"result": result})
+
+	if SampleID == "" {
+		utilities.FailMess(c, 400, "Sample ID is Missing !")
+		return
+	}
+
+	database, errtable := config.GalaSetup()
+
+	if errtable != nil {
+		utilities.FailMess(c, 500, "Fail ! Connection Unavailable !", errtable.Error())
+		return
+	}
+
+	if err := database.Delete(&entities.SampleTabler{}, SampleID).Error; err != nil {
+		utilities.FailMess(c, 500, "Error deleting sample: "+err.Error())
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Delete Success !"})
 }
