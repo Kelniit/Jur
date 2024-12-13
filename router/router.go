@@ -21,5 +21,8 @@ func SampleRouter(route *gin.Engine) {
 
 		// Delete a sample by SampleID
 		sample.DELETE("/Delete/:SampleID", controller.DeleteSample)
+
+		// Update Sample
+		sample.PUT("/Update/:SampleID", controller.UpdateSample)
 	}
 }

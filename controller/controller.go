@@ -116,3 +116,47 @@ func DeleteSample(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "Delete Success !"})
 }
+
+func UpdateSample(c *gin.Context) {
+	// Update Sample by SampleID
+	SampleID := c.Param("SampleID")
+
+	if SampleID == "" {
+		utilities.FailMess(c, 400, "Sample ID is Missing !")
+		return
+	}
+
+	// Bind JSON to SampleTabler struct
+	var UpdateSampleData entities.SampleTabler
+
+	if json_error := c.ShouldBindJSON(&UpdateSampleData); json_error != nil {
+		utilities.FailMess(c, 400, "Fail to Bind JSON", json_error.Error())
+		return
+	}
+
+	// Connect to database
+	database, err := config.GalaSetup()
+
+	if err != nil {
+		utilities.FailMess(c, 500, "Fail ! Connection Unavailable !", err.Error())
+		return
+	}
+
+	// Check if the sample exists
+	var existingSample entities.SampleTabler
+
+	if err := database.First(&existingSample, SampleID).Error; err != nil {
+		if err.Error() == "record not found" {
+			utilities.FailMess(c, 404, "Sample Unavailable !")
+		}
+		return
+	}
+
+	// Perform the update
+	if err := database.Model(&existingSample).Updates(UpdateSampleData).Error; err != nil {
+		utilities.FailMess(c, 500, "Fail to Update Sample", err.Error())
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Update Success !"})
+}
